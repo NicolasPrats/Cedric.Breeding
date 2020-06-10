@@ -10,7 +10,6 @@ namespace Cedric.Breeding
         Y,
         H,
         W,
-        X
-           
+        X           
     }
 }

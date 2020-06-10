@@ -10,97 +10,78 @@ namespace Cedric.Breeding
         private static readonly Random Rng = new Random();
 
         public static PlantFactory Instance { get; } = new PlantFactory();
-        private Plant? TargetPlant { get; set; }
-        private Dictionary<Allele, int>? TargetOccurences { get; set; }
 
         private PlantFactory()
         {
         }
 
-        public void DefineTarget(Plant targetPlant)
-        {
-            if (this.TargetPlant != null)
-                throw new ApplicationException("Target already defined");
-            this.TargetPlant = targetPlant;
-            Dictionary<Allele, int> occurences = CountOccurencesOfAlleles(targetPlant.Genes);
-            TargetOccurences = occurences;
-        }
-
-        private static Dictionary<Allele, int> CountOccurencesOfAlleles(Allele[] genes)
-        {
-            var occurences = new Dictionary<Allele, int>();
-            foreach (var allele in genes)
-            {
-                occurences.TryGetValue(allele, out int count);
-                count++;
-                occurences[allele] = count;
-            }
-
-            return occurences;
-        }
 
         public Plant GetRandomPlant()
         {
             var values = Enum.GetValues(typeof(Allele));
-            var genes = new Allele[Parameters.NbGenes];
-            for (int i = 0; i < genes.Length; i++)
+            var genome = new Allele[Parameters.NbGenes];
+            for (int i = 0; i < genome.Length; i++)
             {
                 var alleleIndex = Rng.Next(0, values.Length);
                 var value = values.GetValue(alleleIndex);
                 if (value == null)
                     throw new ApplicationException("Unexpected null value!");
-                genes[i] = (Allele)(int)value;
+                genome[i] = (Allele)(int)value;
             }
-            if (TargetPlant == null)
-            {
-                return new Plant(genes);
-            }
-            else
-            {
-                return new Plant(genes, CalculateDistanceToTarget(genes));
-            }
-        }
 
-        private int CalculateDistanceToTarget(Allele[] genesToEvaluate)
-        {
-            if (TargetOccurences == null)
-                throw new ApplicationException("Target must be initialized");
-            var occurencesToEvaluate = CountOccurencesOfAlleles(genesToEvaluate);
-            int distance = 0;
-            foreach (var kvp in TargetOccurences)
-            {
-                var targetAllele = kvp.Key;
-                var targetCount = kvp.Value;
-                occurencesToEvaluate.TryGetValue(targetAllele, out int count);
-                if (count < targetCount)
-                {
-                    distance += targetCount - count;
-                }
-            }
-            //TODO : si les genes manquants sont récessifs et que les genes en trop sont dominants,
-            // la distance peut être augmentée
-            return distance;
+            return new Plant(genome);
 
         }
 
-        internal Plant MergePlants(IEnumerable<Plant> subSet)
+        internal IEnumerable<Plant> MergePlants(IEnumerable<Plant> subSet)
         {
-            if (TargetPlant == null)
-                throw new ApplicationException("Target must be defined before merging plants");
-            List<Allele>[] pool = new List<Allele>[Parameters.NbGenes];
-            for (var i = 0; i < pool.Length; i++)
+            List<Allele>[] pool = GetPoolOfAllelles(subSet);
+            KeepPredominantAlleles(pool);
+            return GeneratePlants(subSet, pool);
+        }
+
+        private IEnumerable<Plant> GeneratePlants(IEnumerable<Plant> parents, List<Allele>[] pool)
+        {
+            List<Plant> plants = new List<Plant>();
+            var genomes = GenerateGenomes(parents, pool, 0);
+            foreach (var result in genomes)
             {
-                pool[i] = new List<Allele>();
+                var plant = new Plant(result.Genome, parents.ToList(), result.Probability);
+                plants.Add(plant);
             }
-            foreach (var plant in subSet)
+            return plants;
+        }
+
+        private List<(Allele[] Genome, double Probability)> GenerateGenomes(IEnumerable<Plant> parents, List<Allele>[] pool, int index)
+        {
+            var genomes = new List<(Allele[] genome, double probability)>();
+            var probability = 1.0 / pool[index].Count;
+            if (index == Parameters.NbGenes - 1)
             {
-                for (var i = 0; i < plant.Genes.Length; i++)
+                foreach (var allele in pool[index])
                 {
-                    pool[i].Add(plant.Genes[i]);
+                    Allele[] genome = new Allele[Parameters.NbGenes];
+                    genome[index] = allele;
+                    genomes.Add((genome, probability));
+                }
+                return genomes;
+            }
+            var nextGenomes = GenerateGenomes(parents, pool, index + 1);
+            foreach (var allele in pool[index])
+            {
+                foreach (var next in nextGenomes)
+                {
+                    Allele[] genome = (Allele[])next.Genome.Clone();
+                    genome[index] = allele;
+                    genomes.Add((genome, next.Probability * probability));
                 }
             }
-            Allele[] genes = new Allele[Parameters.NbGenes];
-            for (var i = 0; i < genes.Length; i++)
+            return genomes;
+        }
+
+        private static void KeepPredominantAlleles(List<Allele>[] pool)
+        {
+            for (var i = 0; i < Parameters.NbGenes; i++)
             {
                 var alleles = pool[i].GroupBy(a => a).OrderByDescending(g => g.Count());
                 var count = alleles.First().Count();
@@ -111,10 +92,26 @@ namespace Cedric.Breeding
                 {
                     mostPresentAlleles = dominantPresentAlleles;
                 }
-                var index = Rng.Next(0, mostPresentAlleles.Count());
-                genes[i] = mostPresentAlleles.ElementAt(index);
+                pool[i] = mostPresentAlleles.ToList();
             }
-            return new Plant(genes, CalculateDistanceToTarget(genes));
+        }
+
+        private static List<Allele>[] GetPoolOfAllelles(IEnumerable<Plant> subSet)
+        {
+            List<Allele>[] pool = new List<Allele>[Parameters.NbGenes];
+            for (var i = 0; i < pool.Length; i++)
+            {
+                pool[i] = new List<Allele>();
+            }
+            foreach (var plant in subSet)
+            {
+                for (var i = 0; i < Parameters.NbGenes; i++)
+                {
+                    pool[i].Add(plant.Genome[i]);
+                }
+            }
+
+            return pool;
         }
     }
 }

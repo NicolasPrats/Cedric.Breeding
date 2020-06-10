@@ -10,5 +10,6 @@ namespace Cedric.Breeding
         public const int NbStartingPlants = 30;
         public const int MaxNbPlantsInMerge = 4;
         public static readonly IReadOnlyCollection<Allele> Dominants = new Allele[] { Allele.W, Allele.X };
+        internal static readonly int BatchSize = 10; //batchsize ^ maxnbplantsinmerge doit rester "raisonnable"
     }
 }

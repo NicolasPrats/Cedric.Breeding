@@ -6,51 +6,142 @@ namespace Cedric.Breeding
 {
     class Program
     {
-      
-        static void Main() {
-            var targetPlant = PlantFactory.Instance.GetRandomPlant();
-            PlantFactory.Instance.DefineTarget(targetPlant);
 
-            var startingPlants = new Plant[Parameters.NbStartingPlants];         
-            for (int i = 0; i < startingPlants.Length; i++)
+        static void Main()
+        {
+            //var targetPlant = PlantFactory.Instance.GetRandomPlant();
+            var targetPlant = new Plant(new Allele[] { Allele.Y, Allele.Y, Allele.Y, Allele.Y, Allele.G, Allele.G });
+
+            var analyzedPlants = new SetOfPlants();
+            for (int i = 0; i < Parameters.NbStartingPlants; i++)
             {
-                startingPlants[i] = PlantFactory.Instance.GetRandomPlant();
+                Plant plant;
+                do
+                {
+                    plant = PlantFactory.Instance.GetRandomPlant();
+                } while (plant.IsSimilar(targetPlant));
+                analyzedPlants.Add(plant);
             }
 
-            State initialState = new State("Initial Plants", startingPlants, null);
-            List<Path> sortedPaths = new List<Path>();
-            sortedPaths.Add(new Path(initialState));
-
-            int iterationCount = 0;
-            do
+            Plant? bestPlantFound = null;
+            double bestCostFound = int.MaxValue;
+            var poolOfPlantsToAnalyze = GenerateNewPlants(analyzedPlants);
+            var nextPlantsToAnalyze = TakeSomePlantsToAnalyze(analyzedPlants, poolOfPlantsToAnalyze);
+            while (nextPlantsToAnalyze.Count() != 0)
             {
-                var bestPath = sortedPaths.First();
-                iterationCount++;
-                Console.WriteLine($"Iteration {iterationCount}");
-                Console.WriteLine($"NbPaths = {sortedPaths.Count()}");
-                Console.WriteLine($"BestPath estimate = {bestPath.EstimatedTotalDistance}");
-                if (bestPath.IsComplete)
+                Console.WriteLine("Plantes analysées : " + analyzedPlants.Count());
+                Console.WriteLine("Plantes à analyser : " + nextPlantsToAnalyze.Count());
+                Console.WriteLine("Pool de plantes : " + poolOfPlantsToAnalyze.Count());
+                bool newBestPlantFound = false;
+                if (bestPlantFound != null && bestPlantFound.ComputeCost() < bestCostFound)
                 {
-                    Console.WriteLine($"Solution found in {bestPath.EstimatedTotalDistance} steps");
-                    Console.WriteLine(bestPath.ToString());
-                    Console.WriteLine($"Target was: " + targetPlant);
-                    return;
+                    //Ce cas est faisable si on a amélioré les parents de bestplant
+                    bestCostFound = bestPlantFound.ComputeCost();
+                    newBestPlantFound = true;
                 }
-                sortedPaths.RemoveAt(0);
-                var nextStates = bestPath.GetNextStates();
-                foreach (var state in nextStates)
+                //TODO on recherche plusieurs fois dans poolofplantstoanalyze
+                foreach (var plant in nextPlantsToAnalyze.Union(poolOfPlantsToAnalyze))
                 {
-                    var newPath = new Path(state, bestPath);
-                    //TODO : on pourrait vérifier si l'état n'a pas déjà été calculé sur un chemin plus court
-                    sortedPaths.Add(newPath);
+                    if (plant.IsSimilar(targetPlant))
+                    {
+
+                        if (bestPlantFound == null || plant.ComputeCost() < bestCostFound)
+                        {
+                            Console.WriteLine("Target=" + targetPlant);
+                            Console.WriteLine("Plant=" + plant);
+                            Console.WriteLine("Cout=" + plant.ComputeCost());
+
+                            bestPlantFound = plant;
+                            bestCostFound = plant.ComputeCost();
+                            newBestPlantFound = true;
+                        }
+                    }
                 }
-                //TODO : on retrie sans arrêt une partie du tableau déjà triée
-                // on pourrait soit faire des inssertions à la bonne place
-                // soit trier uniquement les nouveaux arrivants et fusionner les tableaux triés
-                sortedPaths.OrderBy(p => p.EstimatedTotalDistance);
-            } while (true);
+                if (newBestPlantFound)
+                {
+                    nextPlantsToAnalyze.SetMaximumCost(bestCostFound);
+                    analyzedPlants.SetMaximumCost(bestCostFound);
+                    poolOfPlantsToAnalyze.SetMaximumCost(bestCostFound);
+                    Console.WriteLine("Nouveau décompte suite à meilleure plante trouvée: ");
+                    Console.WriteLine("Plantes analysées : " + analyzedPlants.Count());
+                    Console.WriteLine("Plantes à analyser : " + nextPlantsToAnalyze.Count());
+                    Console.WriteLine("Pool de plantes : " + poolOfPlantsToAnalyze.Count());
+                }
+
+
+                poolOfPlantsToAnalyze.UnionWith(GenerateNewPlants(analyzedPlants, nextPlantsToAnalyze));
+                analyzedPlants.UnionWith(nextPlantsToAnalyze);
+                nextPlantsToAnalyze = TakeSomePlantsToAnalyze(analyzedPlants, poolOfPlantsToAnalyze);
+            }
+            Console.WriteLine();
+            Console.WriteLine("Plus de nouvelles plantes!");
+
+            Console.WriteLine("Meilleure plante=" + bestPlantFound);
+            Console.WriteLine("Cout=" + bestCostFound);
+            Console.WriteLine(bestPlantFound?.GenerateTree());
         }
 
-       
+        private static SetOfPlants TakeSomePlantsToAnalyze(SetOfPlants analyzedPlants, SetOfPlants poolOfPlantsToAnalyze)
+        {
+            SetOfPlants nextPlantsToAnalyze = new SetOfPlants();
+            //TODO : trier par distance ?
+            while (poolOfPlantsToAnalyze.Count() > 0 && nextPlantsToAnalyze.Count < Parameters.BatchSize)
+            {
+                var plant = poolOfPlantsToAnalyze.First();
+                poolOfPlantsToAnalyze.Remove(plant);
+                if (!analyzedPlants.Contains(plant))
+                {
+                    nextPlantsToAnalyze.Add(plant);
+                }
+            }
+
+            return nextPlantsToAnalyze;
+        }
+
+        private static SetOfPlants GenerateNewPlants(SetOfPlants previousGenerationPlants, SetOfPlants currentGenerationPlants)
+        {
+            var discoveredPlants = new SetOfPlants();
+            for (var nbOfPlantsToMerge = 2; nbOfPlantsToMerge <= Parameters.MaxNbPlantsInMerge; nbOfPlantsToMerge++)
+            {
+                for (var nbOfPlantsInCurrentGen = 1; nbOfPlantsInCurrentGen <= nbOfPlantsToMerge; nbOfPlantsInCurrentGen++)
+                {
+                    var plants = GenerateNewPlants(previousGenerationPlants, currentGenerationPlants, nbOfPlantsToMerge - nbOfPlantsInCurrentGen, nbOfPlantsInCurrentGen);
+                    discoveredPlants.UnionWith(plants);
+                }
+            }
+            return discoveredPlants;
+        }
+
+        private static SetOfPlants GenerateNewPlants(SetOfPlants previousGenerationPlants, SetOfPlants currentGenerationPlants, int nbOfPreviousGenPlants, int nbOfCurrentGenPlants)
+        {
+            SetOfPlants discoveredPlants = new SetOfPlants();
+            foreach (var subSetCurrentGen in currentGenerationPlants.Combinations(nbOfCurrentGenPlants))
+            {
+                foreach (var subSetAvailable in previousGenerationPlants.Combinations(nbOfPreviousGenPlants))
+                {
+                    var subSet = subSetAvailable.Union(subSetCurrentGen);
+                    var newPlants = PlantFactory.Instance.MergePlants(subSet);
+                    discoveredPlants.UnionWith(newPlants);
+                }
+            }
+            return discoveredPlants;
+        }
+
+
+        private static SetOfPlants GenerateNewPlants(SetOfPlants availablePlants)
+        {
+            var discoveredPlants = new SetOfPlants();
+            for (int nbPlants = 2; nbPlants <= Parameters.MaxNbPlantsInMerge; nbPlants++)
+            {
+                foreach (var subSet in availablePlants.Combinations(nbPlants))
+                {
+                    var newPlants = PlantFactory.Instance.MergePlants(subSet);
+                    discoveredPlants.UnionWith(newPlants);
+                }
+            }
+            return discoveredPlants;
+        }
+
+
     }
 }

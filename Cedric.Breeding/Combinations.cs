@@ -10,6 +10,7 @@ namespace Cedric.Breeding
     // Note that the class is abstract with a private 
     // constructor; this ensures that only nested classes
     // may be derived classes.
+    // Original Author: Eric Lippert, https://gist.github.com/ericlippert/69c9e93b366f8cc5d6ac
 
     abstract class ImmutableStack<T> : IEnumerable<T>
     {
@@ -94,7 +95,7 @@ namespace Cedric.Breeding
         // Where but it is easy to simply write the code
         // out directly.
 
-        public static (IEnumerable<T> subSet, IEnumerable<T> remainingSet) ZipWhere<T>(
+        public static IEnumerable<T> ZipWhere<T>(
           this IEnumerable<T> items,
           IEnumerable<bool> selectors)
         {
@@ -104,32 +105,25 @@ namespace Cedric.Breeding
             if (selectors == null)
                 throw new ArgumentNullException("selectors");
 
-            List<T> subSet = new List<T>();
-            List<T> remainingSet = new List<T>();
+            return ZipWhereIterator<T>(items, selectors);
+        }
+
+        private static IEnumerable<T> ZipWhereIterator<T>(
+          IEnumerable<T> items,
+          IEnumerable<bool> selectors)
+        {
             using (var e1 = items.GetEnumerator())
             using (var e2 = selectors.GetEnumerator())
                 while (e1.MoveNext() && e2.MoveNext())
-                {
                     if (e2.Current)
-                    {
-                        subSet.Add(e1.Current);
-                    }
-                    else
-                    {
-                        remainingSet.Add(e1.Current);
-                    }
-                }
-
-            return (subSet, remainingSet);
+                        yield return e1.Current;
         }
-
-       
 
         // An extension method which takes a sequence of items
         // and produces all subsequences of that sequence of the
         // given size.
 
-        public static IEnumerable<(IEnumerable<T> subSet, IEnumerable<T> remainingSet)> Combinations<T>(
+        public static IEnumerable<IEnumerable<T>> Combinations<T>(
           this IEnumerable<T> items, int k)
         {
             if (k < 0)
