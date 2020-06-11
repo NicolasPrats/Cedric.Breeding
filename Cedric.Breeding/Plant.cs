@@ -6,18 +6,21 @@ using System.Text;
 namespace Cedric.Breeding
 {
     public class Plant
-    {        
+    {
         public IReadOnlyList<Allele> Genome { get; }
         public string Name { get; }
         private Allele[] SortedGenes { get; } //Pour faciliter la comparaison avec la cible
         private int HashCode { get; } //Sert de hashcode mais est en fait réellement unique
         public IList<Plant>? Parents { get; private set; }
         public double Probability { get; private set; }
+        public double Cost { get; private set; }
+
+        protected event EventHandler? OnCostChanged;
 
         public Plant(Allele[] genome)
         {
             this.Genome = genome;
-            
+
             this.SortedGenes = (Allele[])genome.Clone();
             Array.Sort(SortedGenes);
             this.Name = ComputeName();
@@ -27,19 +30,23 @@ namespace Cedric.Breeding
         public Plant(Allele[] genome, IList<Plant> parents, double probability)
             : this(genome)
         {
-            this.Parents = parents;
-            this.Probability = probability;
+            SetParents(parents, probability);
         }
 
-        public double ComputeCost()
+        private void ComputeCost()
         {
-            //TODO mettre le coût en cache et l'invalider ?
-            if (Parents == null)
-                return 0;
-            var cost = Parents.Select(p => p.ComputeCost()).Sum() + 1;
-            return cost / Probability;
+            if (Parents != null)
+            {
+                var cost = Parents.Select(p => p.Cost).Sum() + 1;
+                this.Cost = cost / Probability;
+            }
+            else
+            {
+                this.Cost = 0;
+            }
+            OnCostChanged?.Invoke(this, EventArgs.Empty);
         }
-        
+
 
         private int ComputeHashcode()
         {
@@ -70,12 +77,32 @@ namespace Cedric.Breeding
             return builder.ToString();
         }
 
-        internal void ReplaceParents(IList<Plant>? parents, double probability)
+        internal void SetParents(IList<Plant>? parents, double probability)
         {
+            if (this.Parents != null)
+            {
+                foreach (var parent in this.Parents)
+                {
+                    parent.OnCostChanged -= Parent_OnCostChanged;
+                }
+            }
+
             this.Parents = parents;
-            this.Probability = probability;           
+            if (parents != null)
+            {
+                foreach (var parent in parents)
+                {
+                    parent.OnCostChanged += Parent_OnCostChanged;
+                }
+            }
+            this.Probability = probability;
+            this.ComputeCost();
         }
-          
+
+        private void Parent_OnCostChanged(object? sender, EventArgs e)
+        {
+            this.ComputeCost();
+        }
 
         public Plant? IsSimilarToAny(Plant[] plants)
         {
@@ -122,11 +149,11 @@ namespace Cedric.Breeding
         {
             if (root)
             {
-                builder.AppendLine(this.Name + " (" + this.ComputeCost() + ")");
+                builder.AppendLine(this.Name + " (" + this.Cost + ")");
             }
             else
             {
-                builder.AppendLine(indent + "\\- " + this.Name + " (" + this.ComputeCost() + ")");
+                builder.AppendLine(indent + "\\- " + this.Name + " (" + this.Cost + ")");
             }
             if (this.Parents != null)
             {

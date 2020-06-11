@@ -24,9 +24,9 @@ namespace Cedric.Breeding
             {
                 return false;
             }
-            if (oldPlant.ComputeCost() > newPlant.ComputeCost())
+            if (oldPlant.Cost > newPlant.Cost)
             {
-                oldPlant.ReplaceParents(newPlant.Parents, newPlant.Probability);
+                oldPlant.SetParents(newPlant.Parents, newPlant.Probability);
                 //TODO : est-ce que du coup, on n'a pas écarté une plante fille de la oldPlant car elle était trop couteuse 
                 // mais que maintenant elle est optimale ?
             }
@@ -35,7 +35,7 @@ namespace Cedric.Breeding
 
         bool ISet<Plant>.Add(Plant newPlant)
         {
-            if (!this.Contains(newPlant) && newPlant.ComputeCost() < this.BestCostFound)
+            if (!this.Contains(newPlant) && newPlant.Cost < this.BestCostFound)
             {
                 ((ISet<Plant>)this.InnerSet).Add(newPlant);
                 return true;
@@ -100,7 +100,7 @@ namespace Cedric.Breeding
             {
                 //La plante obtenue à partir de celle là aura au moins un coût de
                 // plant.ComputeCost() + 1
-                if (plant.ComputeCost() + 1 < bestCostFound)
+                if (plant.Cost + 1 < bestCostFound)
                     newSet.Add(plant);
             }
             this.InnerSet = newSet;

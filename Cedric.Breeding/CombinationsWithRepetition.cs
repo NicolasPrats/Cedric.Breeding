@@ -23,7 +23,15 @@ namespace Cedric.Breeding
             }
             else if (length == 1)
             {
-                yield return Combination(items.First(), Enumerable.Empty<T>());
+                var first = items.FirstOrDefault();
+                if (first == null)
+                {
+                    yield break;
+                }
+                else
+                {
+                    yield return Combination(items.First(), Enumerable.Empty<T>());
+                }
             }
             else
             {

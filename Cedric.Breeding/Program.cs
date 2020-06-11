@@ -37,33 +37,37 @@ namespace Cedric.Breeding
         {
             //var targetPlant = PlantFactory.Instance.GetRandomPlant();
             var targetPlants = new Plant[] {
-                new Plant(new Allele[] { Allele.Y, Allele.Y, Allele.Y, Allele.Y, Allele.G, Allele.G })
+                new Plant(new Allele[] { Allele.Y, Allele.Y, Allele.Y, Allele.Y, Allele.G, Allele.G }),
+                new Plant(new Allele[] { Allele.Y, Allele.Y, Allele.Y, Allele.G, Allele.G, Allele.H }),
+                new Plant(new Allele[] { Allele.Y, Allele.Y, Allele.Y, Allele.Y, Allele.Y, Allele.Y }),
+                new Plant(new Allele[] { Allele.G, Allele.G, Allele.G, Allele.G, Allele.G, Allele.G }),
+                new Plant(new Allele[] { Allele.Y, Allele.G, Allele.H, Allele.Y, Allele.G, Allele.H })
              };
 
 
             var analyzedPlants = new SetOfPlants();
+            var poolOfPlantsToAnalyze = new SetOfPlants();
 
             foreach (var genome in Sample)
             {
                 Plant item = PlantFactory.Instance.ParsePlant(genome);
                 if (CalculateScore(item) != int.MinValue)
                 {
-                    analyzedPlants.Add(item);
+                    poolOfPlantsToAnalyze.Add(item);
                 }
             }
 
 
             Plant? bestPlantFound = null;
             double bestCostFound = int.MaxValue;
-            var poolOfPlantsToAnalyze = GenerateNewPlants(analyzedPlants);
             var nextPlantsToAnalyze = TakeSomePlantsToAnalyze(analyzedPlants, poolOfPlantsToAnalyze);
             while (nextPlantsToAnalyze.Count() != 0)
             {
                 bool newBestPlantFound = false;
-                if (bestPlantFound != null && bestPlantFound.ComputeCost() < bestCostFound)
+                if (bestPlantFound != null && bestPlantFound.Cost < bestCostFound)
                 {
                     //Ce cas est faisable si on a amélioré les parents de bestplant
-                    bestCostFound = bestPlantFound.ComputeCost();
+                    bestCostFound = bestPlantFound.Cost;
                     newBestPlantFound = true;
                 }
                 //TODO on recherche plusieurs fois dans poolofplantstoanalyze
@@ -72,13 +76,13 @@ namespace Cedric.Breeding
                     var targetPlant = plant.IsSimilarToAny(targetPlants);
                     if (targetPlant != null)
                     {
-                        if (bestPlantFound == null || plant.ComputeCost() < bestCostFound)
+                        if (bestPlantFound == null || plant.Cost < bestCostFound)
                         {
                             Console.WriteLine("Nouvelle meilleure plante trouvée pour correspondre à la cible: " + targetPlant);
                             Console.WriteLine(plant.GenerateTree());
 
                             bestPlantFound = plant;
-                            bestCostFound = plant.ComputeCost();
+                            bestCostFound = plant.Cost;
                             newBestPlantFound = true;
                         }
                     }
@@ -147,7 +151,7 @@ namespace Cedric.Breeding
                     nbDominants++;
                 }
             }
-            return 0 - nbDominants - (int)plant.ComputeCost();
+            return 0 - nbDominants - (int)plant.Cost;
         }
 
         private static SetOfPlants GenerateNewPlants(SetOfPlants previousGenerationPlants, SetOfPlants currentGenerationPlants)
