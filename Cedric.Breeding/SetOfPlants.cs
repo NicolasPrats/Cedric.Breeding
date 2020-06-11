@@ -93,7 +93,9 @@ namespace Cedric.Breeding
             HashSet<Plant> newSet = new HashSet<Plant>();
             foreach (var plant in this)
             {
-                if (plant.ComputeCost() < bestCostFound)
+                //La plante obtenue à partir de celle là aura au moins un coût de
+                // plant.ComputeCost() + 1
+                if (plant.ComputeCost() + 1 < bestCostFound)
                     newSet.Add(plant);
             }
             this.InnerSet = newSet;

@@ -47,10 +47,7 @@ namespace Cedric.Breeding
 
                         if (bestPlantFound == null || plant.ComputeCost() < bestCostFound)
                         {
-                            Console.WriteLine("Target=" + targetPlant);
-                            Console.WriteLine("Plant=" + plant);
-                            Console.WriteLine("Cout=" + plant.ComputeCost());
-                            Console.WriteLine("Chemin:");
+                            Console.WriteLine("Nouvelle meilleure plante trouvée pour correspondre à la cible: " + targetPlant);
                             Console.WriteLine(plant.GenerateTree());
 
                             bestPlantFound = plant;
