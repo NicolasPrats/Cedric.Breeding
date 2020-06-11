@@ -3,8 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-
-namespace Cedric.Breeding
+namespace Cedric.Breeding.Data
 {
     public class SetOfPlants
         : IEnumerable<Plant>, ICollection<Plant>

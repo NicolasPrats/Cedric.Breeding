@@ -2,29 +2,28 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Cedric.Breeding.Constraints;
 
-namespace Cedric.Breeding
+namespace Cedric.Breeding.Data
 {
     public class Plant
     {
         public IReadOnlyList<Allele> Genome { get; }
         public string Name { get; }
         private Allele[] SortedGenes { get; } //Pour faciliter la comparaison avec la cible
-        private int HashCode { get; } //Sert de hashcode mais est en fait réellement unique
         public IList<Plant>? Parents { get; private set; }
         public double Probability { get; private set; }
-        public double Cost { get; private set; }
+        public double Cost { get; set; }
 
         protected event EventHandler? OnCostChanged;
 
-        public Plant(Allele[] genome, int hashCode)
+        public Plant(Allele[] genome)
         {
             this.Genome = genome;
 
             this.SortedGenes = (Allele[])genome.Clone();
             Array.Sort(SortedGenes);
             this.Name = ComputeName();
-            this.HashCode = hashCode;
         }
 
         private void ComputeCost()
@@ -68,12 +67,12 @@ namespace Cedric.Breeding
                 }
             }
             this.Probability = probability;
-            this.ComputeCost();
+            ComputeCost();
         }
 
         private void Parent_OnCostChanged(object? sender, EventArgs e)
         {
-            this.ComputeCost();
+            ComputeCost();
         }
 
         public Plant? IsSimilarToAny(Plant[] plants)
@@ -95,19 +94,6 @@ namespace Cedric.Breeding
                 }
             }
             return null;
-        }
-
-        public override int GetHashCode()
-        {
-            return HashCode;
-        }
-
-        public override bool Equals(object? obj)
-        {
-            var otherPlant = obj as Plant;
-            if (otherPlant == null)
-                return false;
-            return this.HashCode == otherPlant.HashCode;
         }
 
         public string GenerateTree()

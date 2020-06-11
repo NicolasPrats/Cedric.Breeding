@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace Cedric.Breeding
+namespace Cedric.Breeding.Constraints
 {
     public static class Parameters
     {

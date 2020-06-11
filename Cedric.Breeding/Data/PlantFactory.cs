@@ -2,8 +2,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Cedric.Breeding.Constraints;
 
-namespace Cedric.Breeding
+namespace Cedric.Breeding.Data
 {
     public class PlantFactory
     {
@@ -16,7 +17,7 @@ namespace Cedric.Breeding
         {
         }
 
-        public Plant GetRandomPlant()
+        public Plant CreateRandomPlant()
         {
             var values = Enum.GetValues(typeof(Allele));
             var genome = new Allele[Parameters.NbGenes];
@@ -29,29 +30,36 @@ namespace Cedric.Breeding
                 genome[i] = (Allele)(int)value;
             }
 
-            return GetPlant(genome);
+            return GetPlant(genome, 0);
         }
 
-        private Plant GetPlant(Allele[] genome, IList<Plant>? parents =null, double? probability = null)
+        private Plant GetPlant(Allele[] genome, double initialCost)
         {
             int hashCode = ComputeHashcode(genome);
             if (AlreadyCreatedPlants.TryGetValue(hashCode, out var plant))
             {
-                if (parents != null && probability != null)
+                return plant;
+            }
+            plant = new Plant(genome);
+            plant.Cost = initialCost;
+            AlreadyCreatedPlants[hashCode] = plant;
+            return plant;
+        }
+        private Plant GetPlant(Allele[] genome, IList<Plant> parents, double probability)
+        {
+            int hashCode = ComputeHashcode(genome);
+            if (AlreadyCreatedPlants.TryGetValue(hashCode, out var plant))
+            {
+                var cost = PlantHelper.ComputeCost(parents, probability);
+                if (cost < plant.Cost)
                 {
-                    var cost = PlantHelper.ComputeCost(parents, probability.Value);
-                    if (cost < plant.Cost)
-                    {
-                        plant.SetParents(parents, probability.Value);
-                    }
+                    plant.SetParents(parents, probability);
                 }
                 return plant;
             }
-            plant = new Plant(genome, hashCode);
-            if (parents != null && probability != null)
-            {
-                plant.SetParents(parents, probability.Value);
-            }
+            plant = new Plant(genome);
+
+            plant.SetParents(parents, probability);
             AlreadyCreatedPlants[hashCode] = plant;
             return plant;
         }
@@ -63,16 +71,16 @@ namespace Cedric.Breeding
             return GeneratePlants(subSet.ToList(), pool);
         }
 
-        internal Plant ParsePlant(string input)
+        internal Plant ParsePlant(string input, double initialCost)
         {
             if (input.Length != Parameters.NbGenes)
-                throw new ArgumentOutOfRangeException(nameof(input),"Wrong number of genes in " + input);
+                throw new ArgumentOutOfRangeException(nameof(input), "Wrong number of genes in " + input);
             Allele[] genome = new Allele[Parameters.NbGenes];
             for (int i = 0; i < genome.Length; i++)
             {
                 genome[i] = (Allele)Enum.Parse(typeof(Allele), input.Substring(i, 1), true);
             }
-            return GetPlant(genome);
+            return GetPlant(genome, initialCost);
         }
 
         private IEnumerable<Plant> GeneratePlants(IList<Plant> parents, List<Allele>[] pool)

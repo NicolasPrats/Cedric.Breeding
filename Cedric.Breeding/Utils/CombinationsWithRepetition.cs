@@ -3,7 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Cedric.Breeding
+namespace Cedric.Breeding.Utils
 {
     static class Extensions
     {

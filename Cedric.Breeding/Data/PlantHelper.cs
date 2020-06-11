@@ -2,8 +2,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Cedric.Breeding.Constraints;
 
-namespace Cedric.Breeding
+namespace Cedric.Breeding.Data
 {
     public  static class PlantHelper
     {

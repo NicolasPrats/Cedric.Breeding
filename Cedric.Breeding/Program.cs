@@ -3,7 +3,8 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-
+using Cedric.Breeding.Data;
+using Cedric.Breeding.Solvers;
 
 namespace Cedric.Breeding
 {
@@ -37,11 +38,11 @@ namespace Cedric.Breeding
         {
             //var targetPlant = PlantFactory.Instance.GetRandomPlant();
             var targetPlants = new Plant[] {
-                PlantFactory.Instance.ParsePlant("YYYYGG"),
-                PlantFactory.Instance.ParsePlant("YYYGGH"),
-                PlantFactory.Instance.ParsePlant("YYYYYY"),
-                PlantFactory.Instance.ParsePlant("GGGGGG"),
-                PlantFactory.Instance.ParsePlant("YGHYGH")
+                PlantFactory.Instance.ParsePlant("YYYYGG", double.MaxValue),
+                PlantFactory.Instance.ParsePlant("YYYGGH", double.MaxValue),
+                PlantFactory.Instance.ParsePlant("YYYYYY", double.MaxValue),
+                PlantFactory.Instance.ParsePlant("GGGGGG", double.MaxValue),
+                PlantFactory.Instance.ParsePlant("YGHYGH", double.MaxValue)
              };
 
 
@@ -49,16 +50,14 @@ namespace Cedric.Breeding
 
             foreach (var genome in Sample)
             {
-                Plant item = PlantFactory.Instance.ParsePlant(genome);
+                Plant item = PlantFactory.Instance.ParsePlant(genome, 0);
                 poolOfPlants.Add(item);
             }
 
-          
+            MainSolver solver = new MainSolver(poolOfPlants);
+            solver.Solve(targetPlants);
         }
 
-        
-
-      
     }
 
 }
