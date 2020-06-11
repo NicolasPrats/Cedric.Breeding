@@ -17,8 +17,4 @@
     <DebugSymbols>true</DebugSymbols>
   </PropertyGroup>
 
-  <ItemGroup>
-    <Compile Remove="Combinations.cs" />
-  </ItemGroup>
-
 </Project>

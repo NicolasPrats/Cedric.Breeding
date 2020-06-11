@@ -8,13 +8,13 @@ namespace Cedric.Breeding
     public class PlantFactory
     {
         private static readonly Random Rng = new Random();
+        private static Dictionary<int, Plant> AlreadyCreatedPlants = new Dictionary<int, Plant>();
 
         public static PlantFactory Instance { get; } = new PlantFactory();
 
         private PlantFactory()
         {
         }
-
 
         public Plant GetRandomPlant()
         {
@@ -29,8 +29,31 @@ namespace Cedric.Breeding
                 genome[i] = (Allele)(int)value;
             }
 
-            return new Plant(genome);
+            return GetPlant(genome);
+        }
 
+        private Plant GetPlant(Allele[] genome, IList<Plant>? parents =null, double? probability = null)
+        {
+            int hashCode = ComputeHashcode(genome);
+            if (AlreadyCreatedPlants.TryGetValue(hashCode, out var plant))
+            {
+                if (parents != null && probability != null)
+                {
+                    var cost = PlantHelper.ComputeCost(parents, probability.Value);
+                    if (cost < plant.Cost)
+                    {
+                        plant.SetParents(parents, probability.Value);
+                    }
+                }
+                return plant;
+            }
+            plant = new Plant(genome, hashCode);
+            if (parents != null && probability != null)
+            {
+                plant.SetParents(parents, probability.Value);
+            }
+            AlreadyCreatedPlants[hashCode] = plant;
+            return plant;
         }
 
         internal IEnumerable<Plant> MergePlants(IEnumerable<Plant> subSet)
@@ -49,7 +72,7 @@ namespace Cedric.Breeding
             {
                 genome[i] = (Allele)Enum.Parse(typeof(Allele), input.Substring(i, 1), true);
             }
-            return new Plant(genome);
+            return GetPlant(genome);
         }
 
         private IEnumerable<Plant> GeneratePlants(IList<Plant> parents, List<Allele>[] pool)
@@ -58,7 +81,7 @@ namespace Cedric.Breeding
             var genomes = GenerateGenomes(parents, pool, 0);
             foreach (var result in genomes)
             {
-                var plant = new Plant(result.Genome, parents, result.Probability);
+                var plant = GetPlant(result.Genome, parents, result.Probability);
                 plants.Add(plant);
             }
             return plants;
@@ -124,6 +147,20 @@ namespace Cedric.Breeding
             }
 
             return pool;
+        }
+
+        private static int ComputeHashcode(Allele[] genome)
+        {
+            //Ici on suppose que nombre d'alleles differents ^nombre de genes tient dans un int
+            //Ce qui est vrai au moins pour les données du problème original : 5^6
+            int hashcode = 0;
+            var nbOfAlleles = Enum.GetValues(typeof(Allele)).Length;
+            foreach (var gene in genome)
+            {
+                hashcode *= nbOfAlleles;
+                hashcode += (int)gene;
+            }
+            return hashcode;
         }
     }
 }

@@ -17,50 +17,22 @@ namespace Cedric.Breeding
 
         protected event EventHandler? OnCostChanged;
 
-        public Plant(Allele[] genome)
+        public Plant(Allele[] genome, int hashCode)
         {
             this.Genome = genome;
 
             this.SortedGenes = (Allele[])genome.Clone();
             Array.Sort(SortedGenes);
             this.Name = ComputeName();
-            this.HashCode = ComputeHashcode();
-        }
-
-        public Plant(Allele[] genome, IList<Plant> parents, double probability)
-            : this(genome)
-        {
-            SetParents(parents, probability);
+            this.HashCode = hashCode;
         }
 
         private void ComputeCost()
         {
-            if (Parents != null)
-            {
-                var cost = Parents.Select(p => p.Cost).Sum() + 1;
-                this.Cost = cost / Probability;
-            }
-            else
-            {
-                this.Cost = 0;
-            }
+            this.Cost = PlantHelper.ComputeCost(this.Parents, this.Probability);
             OnCostChanged?.Invoke(this, EventArgs.Empty);
         }
 
-
-        private int ComputeHashcode()
-        {
-            //Ici on suppose que nombre d'alleles differents ^nombre de genes tient dans un int
-            //Ce qui est vrai au moins pour les données du problème original : 5^6
-            int hashcode = 0;
-            var nbOfAlleles = Enum.GetValues(typeof(Allele)).Length;
-            foreach (var gene in Genome)
-            {
-                hashcode *= nbOfAlleles;
-                hashcode += (int)gene;
-            }
-            return hashcode;
-        }
 
         public override string ToString()
         {
