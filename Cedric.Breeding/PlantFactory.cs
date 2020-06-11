@@ -37,7 +37,7 @@ namespace Cedric.Breeding
         {
             List<Allele>[] pool = GetPoolOfAllelles(subSet);
             KeepPredominantAlleles(pool);
-            return GeneratePlants(subSet, pool);
+            return GeneratePlants(subSet.ToList(), pool);
         }
 
         internal Plant ParsePlant(string input)
@@ -52,13 +52,13 @@ namespace Cedric.Breeding
             return new Plant(genome);
         }
 
-        private IEnumerable<Plant> GeneratePlants(IEnumerable<Plant> parents, List<Allele>[] pool)
+        private IEnumerable<Plant> GeneratePlants(IList<Plant> parents, List<Allele>[] pool)
         {
             List<Plant> plants = new List<Plant>();
             var genomes = GenerateGenomes(parents, pool, 0);
             foreach (var result in genomes)
             {
-                var plant = new Plant(result.Genome, parents.ToList(), result.Probability);
+                var plant = new Plant(result.Genome, parents, result.Probability);
                 plants.Add(plant);
             }
             return plants;

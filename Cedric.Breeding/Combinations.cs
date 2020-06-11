@@ -85,7 +85,7 @@ namespace Cedric.Breeding
         }
     }
 
-    static class Extensions
+     static class Extensions
     {
         // A handy extension method which takes a sequence
         // of items and a corresponding sequence of bools,

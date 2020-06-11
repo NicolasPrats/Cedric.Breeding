@@ -29,7 +29,6 @@ namespace Cedric.Breeding
         {
             this.Parents = parents;
             this.Probability = probability;
-            SearchDuplicate(this);
         }
 
         public double ComputeCost()
@@ -73,35 +72,30 @@ namespace Cedric.Breeding
 
         internal void ReplaceParents(IList<Plant>? parents, double probability)
         {
-            SearchDuplicate(this, parents);
             this.Parents = parents;
-            this.Probability = probability;
-           
+            this.Probability = probability;           
         }
+          
 
-        private void SearchDuplicate(Plant plant, IEnumerable<Plant>? parents = null)
+        public Plant? IsSimilarToAny(Plant[] plants)
         {
-            parents = parents ?? this.Parents;
-            if (parents == null)
-                return;
-            foreach (var parent in parents)
+            foreach (var plant in plants)
             {
-                if (parent == plant)
+                bool isSimilar = true;
+                for (int i = 0; i < Parameters.NbGenes; i++)
                 {
-                    throw new ApplicationException("Cycle found!");
+                    if (this.SortedGenes[i] != plant.SortedGenes[i])
+                    {
+                        isSimilar = false;
+                        break;
+                    }
                 }
-                parent.SearchDuplicate(plant);
+                if (isSimilar)
+                {
+                    return plant;
+                }
             }
-        }
-
-        public bool IsSimilar(Plant plant)
-        {
-            for (int i = 0; i < Parameters.NbGenes; i++)
-            {
-                if (this.SortedGenes[i] != plant.SortedGenes[i])
-                    return false;
-            }
-            return true;
+            return null;
         }
 
         public override int GetHashCode()

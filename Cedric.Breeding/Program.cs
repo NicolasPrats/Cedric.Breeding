@@ -4,11 +4,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
+
 namespace Cedric.Breeding
 {
     class Program
     {
-        static string[] Sample = new string[] { "YHGWGX",
+        static string[] Sample = new string[] {
+"YHGWGX",
 "WHWXYH",
 "XYWWGX",
 "WGYGXX",
@@ -29,19 +31,25 @@ namespace Cedric.Breeding
 "XHHWWX",
 "XWYXGX",
 "XGHXGW",
-"HHXWHX",
+"HHXWHX"
 };
         static void Main()
         {
             //var targetPlant = PlantFactory.Instance.GetRandomPlant();
-            //Attention la fonction score est désormais codée en dur vis à vis de cette plante
-            var targetPlant = new Plant(new Allele[] { Allele.Y, Allele.Y, Allele.Y, Allele.Y, Allele.Y, Allele.Y });
+            var targetPlants = new Plant[] {
+                new Plant(new Allele[] { Allele.Y, Allele.Y, Allele.Y, Allele.Y, Allele.G, Allele.G })
+             };
+
 
             var analyzedPlants = new SetOfPlants();
-            
+
             foreach (var genome in Sample)
             {
-                analyzedPlants.Add(PlantFactory.Instance.ParsePlant(genome));
+                Plant item = PlantFactory.Instance.ParsePlant(genome);
+                if (CalculateScore(item) != int.MinValue)
+                {
+                    analyzedPlants.Add(item);
+                }
             }
 
 
@@ -61,9 +69,9 @@ namespace Cedric.Breeding
                 //TODO on recherche plusieurs fois dans poolofplantstoanalyze
                 foreach (var plant in nextPlantsToAnalyze.Union(poolOfPlantsToAnalyze))
                 {
-                    if (plant.IsSimilar(targetPlant))
+                    var targetPlant = plant.IsSimilarToAny(targetPlants);
+                    if (targetPlant != null)
                     {
-
                         if (bestPlantFound == null || plant.ComputeCost() < bestCostFound)
                         {
                             Console.WriteLine("Nouvelle meilleure plante trouvée pour correspondre à la cible: " + targetPlant);
@@ -108,7 +116,7 @@ namespace Cedric.Breeding
                 var plant = poolOfPlantsToAnalyze.Last();
                 poolOfPlantsToAnalyze.Remove(plant);
                 availablePlants.RemoveAt(availablePlants.Count - 1);
-                if (!analyzedPlants.Contains(plant))
+                if (!analyzedPlants.Contains(plant) && CalculateScore(plant) != int.MinValue)
                 {
                     nextPlantsToAnalyze.Add(plant);
                 }
@@ -119,28 +127,27 @@ namespace Cedric.Breeding
         private static int CalculateScore(Plant plant)
         {
             //TODO ne pas recalculer le score pour chaque plante
-            int score = 0;
-            int nbG = 0;
-            int nbY = 0;
+            //int score = 0;
+            //int nbG = 0;
+            //int nbY = 0;
             int nbDominants = 0;
             foreach (var gene in plant.Genome)
             {
-                if (gene == Allele.G)
-                {
-                    nbG++;
-                }
-                else if (gene == Allele.Y)
-                {
-                    nbY++;
-                }
-                else if (Parameters.Dominants.Any(d => d == gene))
+                //if (gene == Allele.G)
+                //{
+                //    nbG++;
+                //}
+                //else if (gene == Allele.Y)
+                //{
+                //    nbY++;
+                //}
+                //else 
+                if (Parameters.Dominants.Any(d => d == gene))
                 {
                     nbDominants++;
                 }
             }
-            //score = Math.Min(nbG, 4) + Math.Min(nbY, 2) - 3 * nbDominants;
-            score = nbY - 3 * nbDominants;
-            return score * 10 - (int) plant.ComputeCost();
+            return 0 - nbDominants - (int)plant.ComputeCost();
         }
 
         private static SetOfPlants GenerateNewPlants(SetOfPlants previousGenerationPlants, SetOfPlants currentGenerationPlants)
@@ -160,9 +167,9 @@ namespace Cedric.Breeding
         private static SetOfPlants GenerateNewPlants(SetOfPlants previousGenerationPlants, SetOfPlants currentGenerationPlants, int nbOfPreviousGenPlants, int nbOfCurrentGenPlants)
         {
             SetOfPlants discoveredPlants = new SetOfPlants();
-            foreach (var subSetCurrentGen in currentGenerationPlants.Combinations(nbOfCurrentGenPlants))
+            foreach (var subSetCurrentGen in currentGenerationPlants.CombinationsWithRepetition(nbOfCurrentGenPlants))
             {
-                foreach (var subSetAvailable in previousGenerationPlants.Combinations(nbOfPreviousGenPlants))
+                foreach (var subSetAvailable in previousGenerationPlants.CombinationsWithRepetition(nbOfPreviousGenPlants))
                 {
                     var subSet = subSetAvailable.Union(subSetCurrentGen);
                     var newPlants = PlantFactory.Instance.MergePlants(subSet).Except(previousGenerationPlants).Except(currentGenerationPlants);
@@ -178,7 +185,7 @@ namespace Cedric.Breeding
             var discoveredPlants = new SetOfPlants();
             for (int nbPlants = 2; nbPlants <= Parameters.MaxNbPlantsInMerge; nbPlants++)
             {
-                foreach (var subSet in availablePlants.Combinations(nbPlants))
+                foreach (var subSet in availablePlants.CombinationsWithRepetition(nbPlants))
                 {
                     var newPlants = PlantFactory.Instance.MergePlants(subSet);
                     discoveredPlants.UnionWith(newPlants.Except(availablePlants));
