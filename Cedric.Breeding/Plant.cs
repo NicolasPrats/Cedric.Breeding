@@ -47,10 +47,10 @@ namespace Cedric.Breeding
             //Ce qui est vrai au moins pour les données du problème original : 5^6
             int hashcode = 0;
             var nbOfAlleles = Enum.GetValues(typeof(Allele)).Length;
-            foreach (var allele in Genome)
+            foreach (var gene in Genome)
             {
                 hashcode *= nbOfAlleles;
-                hashcode += (int)allele;
+                hashcode += (int)gene;
             }
             return hashcode;
         }
@@ -63,9 +63,9 @@ namespace Cedric.Breeding
         private string ComputeName()
         {
             StringBuilder builder = new StringBuilder();
-            foreach (var allele in Genome)
+            foreach (var gene in Genome)
             {
-                builder.Append(allele.ToString());
+                builder.Append(gene.ToString());
             }
             return builder.ToString();
         }

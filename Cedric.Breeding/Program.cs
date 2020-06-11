@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace Cedric.Breeding
 {
@@ -10,6 +12,7 @@ namespace Cedric.Breeding
         static void Main()
         {
             //var targetPlant = PlantFactory.Instance.GetRandomPlant();
+            //Attention la fonction score est désormais codée en dur vis à vis de cette plante
             var targetPlant = new Plant(new Allele[] { Allele.Y, Allele.Y, Allele.Y, Allele.Y, Allele.G, Allele.G });
 
             var analyzedPlants = new SetOfPlants();
@@ -29,9 +32,6 @@ namespace Cedric.Breeding
             var nextPlantsToAnalyze = TakeSomePlantsToAnalyze(analyzedPlants, poolOfPlantsToAnalyze);
             while (nextPlantsToAnalyze.Count() != 0)
             {
-                Console.WriteLine("Plantes analysées : " + analyzedPlants.Count());
-                Console.WriteLine("Plantes à analyser : " + nextPlantsToAnalyze.Count());
-                Console.WriteLine("Pool de plantes : " + poolOfPlantsToAnalyze.Count());
                 bool newBestPlantFound = false;
                 if (bestPlantFound != null && bestPlantFound.ComputeCost() < bestCostFound)
                 {
@@ -50,6 +50,8 @@ namespace Cedric.Breeding
                             Console.WriteLine("Target=" + targetPlant);
                             Console.WriteLine("Plant=" + plant);
                             Console.WriteLine("Cout=" + plant.ComputeCost());
+                            Console.WriteLine("Chemin:");
+                            Console.WriteLine(plant.GenerateTree());
 
                             bestPlantFound = plant;
                             bestCostFound = plant.ComputeCost();
@@ -62,12 +64,12 @@ namespace Cedric.Breeding
                     nextPlantsToAnalyze.SetMaximumCost(bestCostFound);
                     analyzedPlants.SetMaximumCost(bestCostFound);
                     poolOfPlantsToAnalyze.SetMaximumCost(bestCostFound);
-                    Console.WriteLine("Nouveau décompte suite à meilleure plante trouvée: ");
-                    Console.WriteLine("Plantes analysées : " + analyzedPlants.Count());
-                    Console.WriteLine("Plantes à analyser : " + nextPlantsToAnalyze.Count());
-                    Console.WriteLine("Pool de plantes : " + poolOfPlantsToAnalyze.Count());
                 }
 
+
+                Console.WriteLine("Plantes analysées : " + analyzedPlants.Count());
+                Console.WriteLine("Plantes à analyser : " + nextPlantsToAnalyze.Count());
+                Console.WriteLine("Pool de plantes : " + poolOfPlantsToAnalyze.Count());
 
                 poolOfPlantsToAnalyze.UnionWith(GenerateNewPlants(analyzedPlants, nextPlantsToAnalyze));
                 analyzedPlants.UnionWith(nextPlantsToAnalyze);
@@ -83,19 +85,45 @@ namespace Cedric.Breeding
 
         private static SetOfPlants TakeSomePlantsToAnalyze(SetOfPlants analyzedPlants, SetOfPlants poolOfPlantsToAnalyze)
         {
+            var availablePlants = poolOfPlantsToAnalyze.OrderBy(p => CalculateScore(p)).ToList();
             SetOfPlants nextPlantsToAnalyze = new SetOfPlants();
-            //TODO : trier par distance ?
             while (poolOfPlantsToAnalyze.Count() > 0 && nextPlantsToAnalyze.Count < Parameters.BatchSize)
             {
-                var plant = poolOfPlantsToAnalyze.First();
+                var plant = poolOfPlantsToAnalyze.Last();
                 poolOfPlantsToAnalyze.Remove(plant);
+                availablePlants.RemoveAt(availablePlants.Count - 1);
                 if (!analyzedPlants.Contains(plant))
                 {
                     nextPlantsToAnalyze.Add(plant);
                 }
             }
-
             return nextPlantsToAnalyze;
+        }
+
+        private static int CalculateScore(Plant plant)
+        {
+            //TODO ne pas recalculer le score pour chaque plante
+            int score = 0;
+            int nbG = 0;
+            int nbY = 0;
+            int nbDominants = 0;
+            foreach (var gene in plant.Genome)
+            {
+                if (gene == Allele.G)
+                {
+                    nbG++;
+                }
+                else if (gene == Allele.Y)
+                {
+                    nbY++;
+                }
+                else if (Parameters.Dominants.Any(d => d == gene))
+                {
+                    nbDominants++;
+                }
+            }
+            score = Math.Min(nbG, 4) + Math.Min(nbY, 2) - nbDominants;
+            return score * 10 - (int) plant.ComputeCost();
         }
 
         private static SetOfPlants GenerateNewPlants(SetOfPlants previousGenerationPlants, SetOfPlants currentGenerationPlants)
@@ -114,16 +142,23 @@ namespace Cedric.Breeding
 
         private static SetOfPlants GenerateNewPlants(SetOfPlants previousGenerationPlants, SetOfPlants currentGenerationPlants, int nbOfPreviousGenPlants, int nbOfCurrentGenPlants)
         {
-            SetOfPlants discoveredPlants = new SetOfPlants();
-            foreach (var subSetCurrentGen in currentGenerationPlants.Combinations(nbOfCurrentGenPlants))
+            ConcurrentBag<Plant> bag = new ConcurrentBag<Plant>();
+            //foreach (var subSetCurrentGen in currentGenerationPlants.Combinations(nbOfCurrentGenPlants))
+            Parallel.ForEach(currentGenerationPlants.Combinations(nbOfCurrentGenPlants), subSetCurrentGen => 
             {
-                foreach (var subSetAvailable in previousGenerationPlants.Combinations(nbOfPreviousGenPlants))
+                //foreach (var subSetAvailable in previousGenerationPlants.Combinations(nbOfPreviousGenPlants))
+                Parallel.ForEach(previousGenerationPlants.Combinations(nbOfPreviousGenPlants), subSetAvailable => 
                 {
                     var subSet = subSetAvailable.Union(subSetCurrentGen);
                     var newPlants = PlantFactory.Instance.MergePlants(subSet);
-                    discoveredPlants.UnionWith(newPlants);
-                }
-            }
+                    foreach (var plant in newPlants)
+                    {
+                        bag.Add(plant);
+                    }
+                });
+            });
+            SetOfPlants discoveredPlants = new SetOfPlants();
+            discoveredPlants.UnionWith(bag);
             return discoveredPlants;
         }
 

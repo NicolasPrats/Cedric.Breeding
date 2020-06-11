@@ -37,7 +37,7 @@ namespace Cedric.Breeding
             }
             return false;
         }
-        
+
         public int Count => ((ICollection<Plant>)this.InnerSet).Count;
 
         public bool IsReadOnly => ((ICollection<Plant>)this.InnerSet).IsReadOnly;
@@ -57,7 +57,7 @@ namespace Cedric.Breeding
             }
         }
 
-             public void Clear()
+        public void Clear()
         {
             ((ICollection<Plant>)this.InnerSet).Clear();
         }
