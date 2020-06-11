@@ -9,6 +9,11 @@ namespace Cedric.Breeding
     public class SetOfPlants
         : ICollection<Plant>, IEnumerable<Plant>, ISet<Plant>
     {
+
+        public SetOfPlants()
+        {
+        }
+
         private HashSet<Plant> InnerSet = new HashSet<Plant>();
 
         public bool Contains(Plant newPlant)

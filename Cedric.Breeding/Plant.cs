@@ -29,6 +29,7 @@ namespace Cedric.Breeding
         {
             this.Parents = parents;
             this.Probability = probability;
+            SearchDuplicate(this);
         }
 
         public double ComputeCost()
@@ -72,8 +73,25 @@ namespace Cedric.Breeding
 
         internal void ReplaceParents(IList<Plant>? parents, double probability)
         {
+            SearchDuplicate(this, parents);
             this.Parents = parents;
             this.Probability = probability;
+           
+        }
+
+        private void SearchDuplicate(Plant plant, IEnumerable<Plant>? parents = null)
+        {
+            parents = parents ?? this.Parents;
+            if (parents == null)
+                return;
+            foreach (var parent in parents)
+            {
+                if (parent == plant)
+                {
+                    throw new ApplicationException("Cycle found!");
+                }
+                parent.SearchDuplicate(plant);
+            }
         }
 
         public bool IsSimilar(Plant plant)

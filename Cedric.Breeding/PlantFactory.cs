@@ -40,6 +40,18 @@ namespace Cedric.Breeding
             return GeneratePlants(subSet, pool);
         }
 
+        internal Plant ParsePlant(string input)
+        {
+            if (input.Length != Parameters.NbGenes)
+                throw new ArgumentOutOfRangeException(nameof(input),"Wrong number of genes in " + input);
+            Allele[] genome = new Allele[Parameters.NbGenes];
+            for (int i = 0; i < genome.Length; i++)
+            {
+                genome[i] = (Allele)Enum.Parse(typeof(Allele), input.Substring(i, 1), true);
+            }
+            return new Plant(genome);
+        }
+
         private IEnumerable<Plant> GeneratePlants(IEnumerable<Plant> parents, List<Allele>[] pool)
         {
             List<Plant> plants = new List<Plant>();

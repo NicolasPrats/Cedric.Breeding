@@ -8,23 +8,42 @@ namespace Cedric.Breeding
 {
     class Program
     {
-
+        static string[] Sample = new string[] { "YHGWGX",
+"WHWXYH",
+"XYWWGX",
+"WGYGXX",
+"YYYWYH",
+"XXYWYW",
+"WHXWHY",
+"WGHWHH",
+"YYYWYW",
+"WGYWHW",
+"XGGWGH",
+"WYYXYX",
+"XGHHGW",
+"XYYWGH",
+"WHYWHW",
+"WYYWGG",
+"YYWYHX",
+"WXYXGH",
+"XHHWWX",
+"XWYXGX",
+"XGHXGW",
+"HHXWHX",
+};
         static void Main()
         {
             //var targetPlant = PlantFactory.Instance.GetRandomPlant();
             //Attention la fonction score est désormais codée en dur vis à vis de cette plante
-            var targetPlant = new Plant(new Allele[] { Allele.Y, Allele.Y, Allele.Y, Allele.Y, Allele.G, Allele.G });
+            var targetPlant = new Plant(new Allele[] { Allele.Y, Allele.Y, Allele.Y, Allele.Y, Allele.Y, Allele.Y });
 
             var analyzedPlants = new SetOfPlants();
-            for (int i = 0; i < Parameters.NbStartingPlants; i++)
+            
+            foreach (var genome in Sample)
             {
-                Plant plant;
-                do
-                {
-                    plant = PlantFactory.Instance.GetRandomPlant();
-                } while (plant.IsSimilar(targetPlant));
-                analyzedPlants.Add(plant);
+                analyzedPlants.Add(PlantFactory.Instance.ParsePlant(genome));
             }
+
 
             Plant? bestPlantFound = null;
             double bestCostFound = int.MaxValue;
@@ -119,7 +138,8 @@ namespace Cedric.Breeding
                     nbDominants++;
                 }
             }
-            score = Math.Min(nbG, 4) + Math.Min(nbY, 2) - nbDominants;
+            //score = Math.Min(nbG, 4) + Math.Min(nbY, 2) - 3 * nbDominants;
+            score = nbY - 3 * nbDominants;
             return score * 10 - (int) plant.ComputeCost();
         }
 
@@ -139,23 +159,16 @@ namespace Cedric.Breeding
 
         private static SetOfPlants GenerateNewPlants(SetOfPlants previousGenerationPlants, SetOfPlants currentGenerationPlants, int nbOfPreviousGenPlants, int nbOfCurrentGenPlants)
         {
-            ConcurrentBag<Plant> bag = new ConcurrentBag<Plant>();
-            //foreach (var subSetCurrentGen in currentGenerationPlants.Combinations(nbOfCurrentGenPlants))
-            Parallel.ForEach(currentGenerationPlants.Combinations(nbOfCurrentGenPlants), subSetCurrentGen => 
+            SetOfPlants discoveredPlants = new SetOfPlants();
+            foreach (var subSetCurrentGen in currentGenerationPlants.Combinations(nbOfCurrentGenPlants))
             {
-                //foreach (var subSetAvailable in previousGenerationPlants.Combinations(nbOfPreviousGenPlants))
-                Parallel.ForEach(previousGenerationPlants.Combinations(nbOfPreviousGenPlants), subSetAvailable => 
+                foreach (var subSetAvailable in previousGenerationPlants.Combinations(nbOfPreviousGenPlants))
                 {
                     var subSet = subSetAvailable.Union(subSetCurrentGen);
-                    var newPlants = PlantFactory.Instance.MergePlants(subSet);
-                    foreach (var plant in newPlants)
-                    {
-                        bag.Add(plant);
-                    }
-                });
-            });
-            SetOfPlants discoveredPlants = new SetOfPlants();
-            discoveredPlants.UnionWith(bag);
+                    var newPlants = PlantFactory.Instance.MergePlants(subSet).Except(previousGenerationPlants).Except(currentGenerationPlants);
+                    discoveredPlants.UnionWith(newPlants);
+                }
+            }
             return discoveredPlants;
         }
 
@@ -168,7 +181,7 @@ namespace Cedric.Breeding
                 foreach (var subSet in availablePlants.Combinations(nbPlants))
                 {
                     var newPlants = PlantFactory.Instance.MergePlants(subSet);
-                    discoveredPlants.UnionWith(newPlants);
+                    discoveredPlants.UnionWith(newPlants.Except(availablePlants));
                 }
             }
             return discoveredPlants;
