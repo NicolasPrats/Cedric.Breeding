@@ -10,15 +10,11 @@ namespace Cedric.Breeding.Solvers
 {
     public class BitSolver
     {
-        // X????
-        // rXXXX
-        // rWWWW
-        // r????
+    
         // Objectif : pour chaque récessif r, obtenir toutes les plantes :
         // rXXXXX, XrXXXX, XXrXXXX, ...
         // rWWWWW, WrWWWW, WWrWWWW, ...
-        // Ainsi, on est capable de remplacer un gene de chaque plante par ce qu'on veut (disons g)
-
+        
 
         public SetOfPlants PoolOfPlants { get; }
         private static Dictionary<Allele, Plant[]> BitsX { get; } = new Dictionary<Allele, Plant[]>();
@@ -122,7 +118,9 @@ namespace Cedric.Breeding.Solvers
             // On cherche ??X?r? (r récessif)
             // et on combine, parmi les possibilités il y a 
             // XXX?Y?
-            var otherPlant = this.PoolOfPlants.Where(plant => plant[pos].IsRecessive() && plant[i] == dominant).FirstOrDefault();
+            var otherPlant = this.PoolOfPlants.Where(plant => plant[pos].IsRecessive() && plant[i] == dominant)
+                            .OrderBy(plant => plant.Cost)
+                            .FirstOrDefault();
             if (otherPlant == null)
                 return null;
             var newPlants = PlantFactory.Instance.MergePlants(candidate, otherPlant);
@@ -138,8 +136,8 @@ namespace Cedric.Breeding.Solvers
             // et que les 2 premiers gènes soient différent de la plante précédente
             // et on combine, parmi les possibilités il y a 
             // XXX?Y?
-            var firstPlants = this.PoolOfPlants.Where(plant => plant[i] == dominant);
-            var secondPlants = this.PoolOfPlants.Where(plant => plant[pos] == recessif && plant[i] != candidate[i]);
+            var firstPlants = this.PoolOfPlants.Where(plant => plant[i] == dominant).OrderBy(plant => plant.Cost);
+            var secondPlants = this.PoolOfPlants.Where(plant => plant[pos] == recessif && plant[i] != candidate[i]).OrderBy(plant => plant.Cost);
 
             foreach (var firstPlant in firstPlants)
             {
@@ -174,8 +172,8 @@ namespace Cedric.Breeding.Solvers
             // On cherche ??X?W?  
             // et on combine en prenant 2 fois le candidat, parmi les possibilités il y a 
             // XXX?Y?
-            var firstPlant = this.PoolOfPlants.Where(plant => plant[i] == dominant && plant[pos] == Allele.X).FirstOrDefault();
-            var secondPlant = this.PoolOfPlants.Where(plant => plant[i] == dominant && plant[pos] == Allele.Y).FirstOrDefault();
+            var firstPlant = this.PoolOfPlants.Where(plant => plant[i] == dominant && plant[pos] == Allele.X).OrderBy(plant => plant.Cost).FirstOrDefault();
+            var secondPlant = this.PoolOfPlants.Where(plant => plant[i] == dominant && plant[pos] == Allele.Y).OrderBy(plant => plant.Cost).FirstOrDefault();
             if (firstPlant == null || secondPlant == null)
                 return null;
             var newPlants = PlantFactory.Instance.MergePlants(candidate, candidate, firstPlant, secondPlant);
@@ -192,12 +190,12 @@ namespace Cedric.Breeding.Solvers
             // On cherche ??X???
             // On combine les 2 derniers + candidat, parmi les possibilités il y a 
             // XXX?Y?
-            var intermediatePlant = this.PoolOfPlants.Where(plant => plant[i].IsRecessive() && plant[i] != candidate[i] && plant[pos].IsRecessive()).FirstOrDefault();
+            var intermediatePlant = this.PoolOfPlants.Where(plant => plant[i].IsRecessive() && plant[i] != candidate[i] && plant[pos].IsRecessive()).OrderBy(plant => plant.Cost).FirstOrDefault();
             if (intermediatePlant == null)
                 return null;
             var newPlants = PlantFactory.Instance.MergePlants(candidate, intermediatePlant);
             this.PoolOfPlants.Add(newPlants);
-            var firstPlant = newPlants.Where(plant => plant[i] == intermediatePlant[i] && plant[pos] == candidate[pos]).FirstOrDefault();
+            var firstPlant = newPlants.Where(plant => plant[i] == intermediatePlant[i] && plant[pos] == candidate[pos]).OrderBy(plant => plant.Cost).FirstOrDefault();
             var secondPlant = this.PoolOfPlants.Where(plant => plant[i] == dominant).FirstOrDefault();
             if (firstPlant == null || secondPlant == null)
                 return null;
@@ -209,7 +207,7 @@ namespace Cedric.Breeding.Solvers
         private static Plant SearchNewCandidate(int pos, Allele recessif, Allele dominant, int i, IEnumerable<Plant> newPlants)
         {
             Plant? newCandidate = null;
-            foreach (var plant in newPlants.Where(plant => plant[pos] == recessif))
+            foreach (var plant in newPlants.Where(plant => plant[pos] == recessif).OrderBy(plant => plant.Cost))
             {
                 bool plantOk = true;
                 for (int j = 0; j <= i; j++)
