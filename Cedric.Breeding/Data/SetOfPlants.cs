@@ -13,6 +13,11 @@ namespace Cedric.Breeding.Data
         {
         }
 
+        public SetOfPlants(IEnumerable<Plant> plants)
+        {
+            this.Add(plants);
+        }
+
         private HashSet<Plant> InnerSet = new HashSet<Plant>();
         public double MaximumCost { get; private set; } = double.MaxValue;
 
@@ -22,7 +27,7 @@ namespace Cedric.Breeding.Data
             HashSet<Plant> newSet = new HashSet<Plant>();
             foreach (var plant in this)
             {
-                if (plant.Cost < maximumCost)
+                if (plant.Cost <= maximumCost)
                     newSet.Add(plant);
             }
             this.InnerSet = newSet;
@@ -30,7 +35,7 @@ namespace Cedric.Breeding.Data
 
         public void Add(Plant plant)
         {
-            if (plant.Cost < this.MaximumCost)
+            if (plant.Cost <= this.MaximumCost)
             {
                 this.InnerSet.Add(plant);
             }

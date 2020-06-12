@@ -37,15 +37,14 @@ namespace Cedric.Breeding
         static void Main()
         {
             //var targetPlant = PlantFactory.Instance.GetRandomPlant();
-            var targetPlants = new Plant[] {
+            var targetPlants = new SetOfPlants() {
                 PlantFactory.Instance.ParsePlant("YYYYGG", double.MaxValue),
                 PlantFactory.Instance.ParsePlant("YYYGGH", double.MaxValue),
                 PlantFactory.Instance.ParsePlant("YYYYYY", double.MaxValue),
                 PlantFactory.Instance.ParsePlant("GGGGGG", double.MaxValue),
                 PlantFactory.Instance.ParsePlant("YGHYGH", double.MaxValue)
              };
-
-
+            
             var poolOfPlants = new SetOfPlants();
 
             foreach (var genome in Sample)

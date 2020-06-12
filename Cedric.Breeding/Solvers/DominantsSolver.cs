@@ -9,7 +9,8 @@ using Cedric.Breeding.Utils;
 namespace Cedric.Breeding.Solvers
 {
     /// <summary>
-    /// Objectif, on veut que pour chaque position (P1 et P2, P1 < P2), on ait 2 plantes telles que
+    /// 2 étapes.
+    /// Objectif étape 1: on veut que pour chaque position (P1 et P2, P1 < P2), on ait 2 plantes telles que
     ///   * A P2 on ait un allèle récessif commun
     ///   * A P1 on ait :
     ///             1) soit 2 allèles récessifs différents (Paire de type 1)
@@ -19,6 +20,29 @@ namespace Cedric.Breeding.Solvers
     ///     Si il nous manque par exemple ?X??R?
     ///     On cherche les plantes ?X??X?, ?X??W? et ????R?. 
     ///     On les combine en utilisant deux fois la dernière. Dans le lot, on est assuré d'avoir ?X??R? (au pire 1 chance sur 2)
+    ///     
+    /// Etape 2:, on veut que pour chaque position P2, on ait 2 plantes telles que :
+    ///     * A P2 on ait un allèle récessif
+    ///     * Quelque soit la position P1 < P2, les 2 plantes aient
+    ///         1) soit 2 allèles récessifs différents (Paire de type 1)
+    ///         2) soit 2 allèles dominants différents (Paire de type 2)
+    ///         
+    ///    Si P2 =2,  on est dans le cas particulier de l'étape d'avant.
+    ///    Ensuite pour les autres P2 :
+    ///         1) On commence avec P1 = 1, on est dans le cas particulier de l'étape d'avant, on prend les 2 plantes
+    ///         2) Ensuite si la condition est bonne pour P2 pour les 2 plantes tout est bon
+    ///         3) sinon c'est qu'elles ont soit 2 allèles récessifs identiques, soit 2 allèles dominants identiques
+    ///             * Cas des allèles récessifs identiques 
+    ///          
+    ///          RXR???
+    ///          RWR???
+    ///          ???R??
+    ///          ???R??
+    ///          
+    ///           X????
+    ///          
+    ///          Xrrrr
+    ///          Wrrrr
     /// </summary>
     class DominantsSolver
     {

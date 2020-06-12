@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Collections.Generic;
 using System.Text;
 using Cedric.Breeding.Data;
@@ -14,12 +15,10 @@ namespace Cedric.Breeding.Solvers
             this.PoolOfPlants = poolOfPlants;
         }
 
-        public void Solve(Plant[] targets)
+        public void Solve(SetOfPlants targets)
         {
-            DominantsSolver almostFullDominantsSolver = new DominantsSolver(PoolOfPlants);
-            almostFullDominantsSolver.Solve();
-            RecessiveSolver recessiveSolver = new RecessiveSolver(PoolOfPlants);
-            recessiveSolver.Solve();
+            BitSolver bitSolver = new BitSolver(PoolOfPlants);
+            bitSolver.Solve(targets);
         }
         
     }
