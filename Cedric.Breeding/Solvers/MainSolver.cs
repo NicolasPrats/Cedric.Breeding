@@ -17,6 +17,8 @@ namespace Cedric.Breeding.Solvers
 
         public Dictionary<Plant, Plant> Solve(SetOfPlants targets)
         {
+            BruteForceSolver solver = new BruteForceSolver(PoolOfPlants);
+            solver.Solve(10); // Juste pour ajouter un peu plus de matière au début.
             BitSolver bitSolver = new BitSolver(PoolOfPlants);
             bitSolver.Solve(targets);
             if (bitSolver.AlleleWithFullBits == null)
