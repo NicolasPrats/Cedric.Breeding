@@ -16,6 +16,10 @@ namespace Cedric.Breeding.Solvers
 
         public void Solve(Plant[] targets)
         {
+            DominantsSolver almostFullDominantsSolver = new DominantsSolver(PoolOfPlants);
+            almostFullDominantsSolver.Solve();
+            RecessiveSolver recessiveSolver = new RecessiveSolver(PoolOfPlants);
+            recessiveSolver.Solve();
         }
         
     }

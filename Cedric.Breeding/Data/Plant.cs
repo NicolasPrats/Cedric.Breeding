@@ -32,6 +32,13 @@ namespace Cedric.Breeding.Data
             OnCostChanged?.Invoke(this, EventArgs.Empty);
         }
 
+        public Allele this[int index]
+        {
+            get
+            {
+                return this.Genome[index];
+            }
+        }
 
         public override string ToString()
         {

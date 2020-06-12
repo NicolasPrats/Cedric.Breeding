@@ -64,6 +64,12 @@ namespace Cedric.Breeding.Data
             return plant;
         }
 
+        internal IEnumerable<Plant> MergePlants(params Plant[] plants)
+        {
+            return this.MergePlants((IEnumerable<Plant>)plants);
+
+        }
+
         internal IEnumerable<Plant> MergePlants(IEnumerable<Plant> subSet)
         {
             List<Allele>[] pool = GetPoolOfAllelles(subSet);

@@ -21,14 +21,6 @@ namespace Cedric.Breeding.Data
             }
         }
 
-        private static bool IsRecessiveUntilLevel(Plant plant, int level)
-        {
-            for (int i = 0; i < level; i++)
-            {
-                if (Parameters.Dominants.Contains(plant.Genome[i]))
-                    return false;
-            }
-            return true;
-        }
+       
     }
 }
