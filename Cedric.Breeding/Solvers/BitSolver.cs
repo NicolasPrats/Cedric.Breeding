@@ -18,11 +18,12 @@ namespace Cedric.Breeding.Solvers
         // rXXXXX, XrXXXX, XXrXXXX, ...
         // rWWWWW, WrWWWW, WWrWWWW, ...
         // Ainsi, on est capable de remplacer un gene de chaque plante par ce qu'on veut (disons g)
-        //Par exemple, si on a  ?D????
-        // On combine avec      XgXXXX et WgWWWW => on obtient ?g???? dans le lot
+
+
         public SetOfPlants PoolOfPlants { get; }
-        public Dictionary<Allele, Plant[]> BitsX { get; } = new Dictionary<Allele, Plant[]>();
-        public Dictionary<Allele, Plant[]> BitsW { get; } = new Dictionary<Allele, Plant[]>();
+        private static Dictionary<Allele, Plant[]> BitsX { get; } = new Dictionary<Allele, Plant[]>();
+        private static Dictionary<Allele, Plant[]> BitsW { get; } = new Dictionary<Allele, Plant[]>();
+        public Allele? AlleleWithFullBits { get; set; }
 
         public BitSolver(SetOfPlants poolOfPlants)
         {
@@ -32,6 +33,8 @@ namespace Cedric.Breeding.Solvers
 
         public void Solve(SetOfPlants targets)
         {
+            //TODO : à chaque fois qu'on a le choix entre plusieurs plantes,
+            // prendre la moins chère
             foreach (var recessif in Parameters.Recessives)
             {
                 int nbBits = 0;
@@ -40,9 +43,11 @@ namespace Cedric.Breeding.Solvers
                 for (int pos = 0; pos < Parameters.NbGenes; pos++)
                 {
                     var bitX = Solve(pos, recessif, Allele.X);
-                    BitsX[recessif][pos] = bitX;
+                    if (bitX != null)
+                        BitsX[recessif][pos] = bitX;
                     var bitW = Solve(pos, recessif, Allele.W);
-                    BitsW[recessif][pos] = bitW;
+                    if (bitW != null)
+                        BitsW[recessif][pos] = bitW;
                     if (bitX != null && bitW != null)
                     {
                         nbBits++;
@@ -57,7 +62,22 @@ namespace Cedric.Breeding.Solvers
                         targets.Remove(target);
                     }
                 }
+                if (nbBits == Parameters.NbGenes)
+                {
+                    AlleleWithFullBits = recessif;
+                }
             }
+        }
+
+        internal static Plant? SetBit(Plant plant, int i, Allele targetAllele)
+        {
+            var plantX = BitsX[targetAllele][i];
+            var plantW = BitsW[targetAllele][i];
+            if (plantX == null || plantW == null)
+                return null;
+            var newPlants = PlantFactory.Instance.MergePlants(plant, plant, plantX, plantW);
+            var result = newPlants.Where(plant => plant[i] == targetAllele).First();
+            return result;
         }
 
         private Plant? Solve(int pos, Allele recessif, Allele dominant)

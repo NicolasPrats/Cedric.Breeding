@@ -1,13 +1,14 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
+using System.Collections.Generic;
 using System.Text;
-using Cedric.Breeding.Constraints;
 using Cedric.Breeding.Data;
+using Cedric.Breeding.Constraints;
+using Cedric.Breeding.Utils;
 
 namespace Cedric.Breeding.Solvers
 {
-   public class RecessiveSolver
+    public class RecessiveSolver
     {
         public SetOfPlants PoolOfPlants { get; }
 
@@ -16,50 +17,65 @@ namespace Cedric.Breeding.Solvers
             this.PoolOfPlants = poolOfPlants;
         }
 
-        public void Solve()
+        public Plant Solve(Allele targetAllele)
         {
-            for (int level = 1; level <= Parameters.NbGenes; level++)
+            var plants = ReplaceAllRecessiveAlleles(targetAllele);
+            return SearchFullRecessivePlant(plants);
+        }
+
+        private SetOfPlants ReplaceAllRecessiveAlleles(Allele targetAllele)
+        {
+            SetOfPlants plantsWithOnlyTargetAllele = new SetOfPlants();
+            var otherAlleles = new List<Allele>(Parameters.Recessives);
+            otherAlleles.Remove(targetAllele);
+
+            var plantsWithOtherAlleles = PoolOfPlants.ToList();
+            foreach (var plant in plantsWithOtherAlleles)
             {
-                EnsureRecessivePlantExistsAtLevel(level);
+                Plant? newPlant = plant;
+                for (var i = 0; i < Parameters.NbGenes; i++)
+                {
+                    if (!otherAlleles.Contains(plant[i]))
+                        continue;
+                    newPlant = BitSolver.SetBit(newPlant, i, targetAllele);
+                    if (newPlant == null)
+                        throw new ApplicationException("bug"); 
+                }
+                this.PoolOfPlants.Add(newPlant);
+                plantsWithOnlyTargetAllele.Add(newPlant);
             }
+            return plantsWithOnlyTargetAllele;
         }
 
-        /* XXXXrX */
-
-        private void EnsureRecessivePlantExistsAtLevel(int level)
+        private Plant SearchFullRecessivePlant(SetOfPlants plants)
         {
-            // Plante récessive de level X = plante dont le genome commence par au moins X alleles recessifs
-            //if (this.PoolOfPlants.Any(p => IsRecessiveUntilLevel(p, level)))
-            //    return;
-            //if (level == 1)
-            //{
-            //    throw new ApplicationException("No solution exist");
-            //}
-            /* abcdefg sont tous récessifs
-             * On cherche 2 plantes : abcX?? et defW??
-             * on fusionne, dans le lot il y a abcW.
-             * On cherche une ???g??. On fusionne les 3 plantes
-             * abcX
-             * abcW
-             * ???g
-             * ???g
-             * 
-             * yyyX
-             * yyyW
-             * 
-             * ???y
-             * */
-        }
-
-        private static bool IsRecessiveUntilLevel(Plant plant, int level)
-        {
-            for (int i = 0; i < level; i++)
+            SetOfPlants recessivePlants = new SetOfPlants();
+            do
             {
-                if (Parameters.Dominants.Contains(plant.Genome[i]))
-                    return false;
-            }
-            return true;
+                var nextPlantWithPotential = plants.Except(recessivePlants)
+                                .OrderByDescending(p => p.Genome.Count(g => g.IsRecessive()))
+                                .ThenBy(p => p.Cost)
+                                .FirstOrDefault();
+                int result = nextPlantWithPotential.Genome.Count(g => g.IsDominant());
+                if (result == 0)
+                    return nextPlantWithPotential;
+                if (nextPlantWithPotential == null)
+                    throw new ApplicationException("Failure");
+                for (int i = 1; i < Parameters.MaxNbPlantsInMerge; i++)
+                {
+                    foreach (var subSet in recessivePlants.CombinationsWithRepetition(i))
+                    {
+                        var list = subSet.ToList();
+                        list.Add(nextPlantWithPotential);
+                        var newPlants = PlantFactory.Instance.MergePlants(list);
+                        PoolOfPlants.Add(newPlants);
+                        plants.Add(newPlants);
+                    }
+                }
+                recessivePlants.Add(nextPlantWithPotential);
+            } while (true);
         }
+
 
     }
 }

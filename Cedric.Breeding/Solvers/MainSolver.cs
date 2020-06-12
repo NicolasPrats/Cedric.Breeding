@@ -19,6 +19,14 @@ namespace Cedric.Breeding.Solvers
         {
             BitSolver bitSolver = new BitSolver(PoolOfPlants);
             bitSolver.Solve(targets);
+            if (bitSolver.AlleleWithFullBits == null)
+                throw new ApplicationException("failure");
+            RecessiveSolver recessiveSolver = new RecessiveSolver(PoolOfPlants);
+            var fullRecessivePlant = recessiveSolver.Solve(bitSolver.AlleleWithFullBits.Value);
+
+            var PlantSolver = new PlantSolver(this.PoolOfPlants);
+            PlantSolver.Solve(targets, fullRecessivePlant);
+           
         }
         
     }

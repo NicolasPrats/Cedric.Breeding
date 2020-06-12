@@ -1,60 +1,35 @@
-﻿Plant
-Coût (0 initial)
-Path (Vide initial)
+﻿"YHGWGX",
+"WHWXYH",
+"XYWWGX",
+"WGYGXX",
+"YYYWYH",
+"XXYWYW",
+"WHXWHY",
+"WGHWHH",
+"YYYWYW",
+"WGYWHW",
+"XGGWGH",
+"WYYXYX",
+"XGHHGW",
+"XYYWGH",
+"WHYWHW",
+"WYYWGG",
+"YYWYHX",
+"WXYXGH",
+"XHHWWX",
+"XWYXGX",
+"XGHXGW",
+"HHXWHX"
 
-a+b => (a+b) 
-coût = somme (a+b) + 1
-Path (a+b)
+"WGYGXX",
+"XGHHGW",
+"YYWYHX",
 
-1ère itération
-pool plant
-=> combinaisons de plantes - old
-=> plantes 2nde generation
+"YYYWYH""
 
-n+1 itération
-=> toutes les combinaisons avec au moins 1 plante de la nème génération
-retire celles présentes dans les n précédentes générations
-=> génération n+1
+"XGHHGW",
+"YYWYHX" => XYWYHX
 
-
-proba : cost * 2
-
- public List<Plant> StartBreedingRound<T>(Hashset<T> plantPool, IEnumerable<T> newPlants, Plant wishPlant, int roundNb)
-        {
-       
-            List<Plant> newPlantRound = new List<Plant>();
-            //for (var index = 2; index < (6 - Math.Min(roundNb, 3)); index++)
-            for (var index = 2; index < 5; index++)
-            {
-                Console.Write("\t" + (index - 1) + " - Number of new plants in this iteration  : ...");
-                List<Plant> newPlantsIteration = new List<Plant>();
-                int currentBestDistance = Math.Min(roundNb, 4);
-                foreach (IEnumerable<T> permutation in PermuteUtils.PermuteUnique<T>((IEnumerable<T>)plantPool, index))
-                {
-                //
-                    List<Plant> permutedPlants = new List<Plant>();
-                    foreach (T i in permutation)
-                    {
-                        permutedPlants.Add((Plant)(object)i);
-                    }
-                    Plant newPlant = new Plant(permutedPlants);
-                    currentBestDistance = Math.Max(currentBestDistance, ((Plant)(object)newPlant).genome.GetVirtualDistanceFrom(wishPlant.genome));
-
-
-                    newPlantsIteration.Add(newPlant);
-
-                    //if (!permutedPlants.Contains(newPlant, new PlantEqualityComparer()) &&
-                    //    newPlant.genome.GetVirtualDistanceFrom(wishPlant.genome) > currentBestDistance - 2)
-                    //{
-                    //    newPlantsIteration.Add(newPlant);
-                    //}
-                    if (newPlant.genome.GetDistanceFrom(wishPlant.genome) == 6) return newPlantsIteration;
-                }
-                newPlantsIteration = newPlantsIteration.Distinct(new PlantEqualityComparer()).ToList();
-
-                Console.WriteLine(newPlantsIteration.Count());
-                newPlantRound.AddRange(newPlantsIteration);
-            }
-            return newPlantRound;
-        }
-
+"YYWYHX"
+"XYWYHX" => XYWYHX
+"YYYWYH""
