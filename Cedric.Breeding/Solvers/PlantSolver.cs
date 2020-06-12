@@ -30,16 +30,18 @@ namespace Cedric.Breeding.Solvers
             this.PoolOfPlants = poolOfPlants;
         }
 
-        public void Solve(SetOfPlants targets, Plant fullRecessivePlant)
+        public Dictionary<Plant, Plant> Solve(SetOfPlants targets, Plant fullRecessivePlant)
         {
+            Dictionary<Plant, Plant> solutions = new Dictionary<Plant, Plant>();
             foreach (var target in targets)
             {
-                Solve(target, fullRecessivePlant);
+                solutions[target] = Solve(target, fullRecessivePlant);
             }
+            return solutions;
         }
 
         private IList<int[]> PossibleOrders = (new int[] { 0, 1, 2, 3, 4, 5 }).Permutations().ToList();
-        private void Solve(Plant target, Plant fullRecessivePlant)
+        private Plant? Solve(Plant target, Plant fullRecessivePlant)
         {
             var evaluatedVariants = new HashSet<Plant>();
             Allele[] genome = target.Genome.ToArray();
@@ -65,11 +67,11 @@ namespace Cedric.Breeding.Solvers
             }
             if (bestVariant == null)
             {
-                File.WriteAllText(target.Name + ".txt", "Not found");
+                return null;
             }
             else
             {
-                File.WriteAllText(target.Name + ".txt", bestVariant.GenerateTree());
+                return bestVariant;
             }
         }
 

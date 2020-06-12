@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Cedric.Breeding.Data;
@@ -54,7 +55,20 @@ namespace Cedric.Breeding
             }
 
             MainSolver solver = new MainSolver(poolOfPlants);
-            solver.Solve(targetPlants);
+            var solutions = solver.Solve(targetPlants);
+
+            foreach (var kvp in solutions)
+            {
+                var file = kvp.Key + ".txt";
+                if (kvp.Value == null)
+                {
+                    File.WriteAllText(file, "Not found");
+                }
+                else
+                {
+                    File.WriteAllText(file, kvp.Value.GenerateTree());
+                }
+            }
         }
 
     }

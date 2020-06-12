@@ -15,7 +15,7 @@ namespace Cedric.Breeding.Solvers
             this.PoolOfPlants = poolOfPlants;
         }
 
-        public void Solve(SetOfPlants targets)
+        public Dictionary<Plant, Plant> Solve(SetOfPlants targets)
         {
             BitSolver bitSolver = new BitSolver(PoolOfPlants);
             bitSolver.Solve(targets);
@@ -25,7 +25,7 @@ namespace Cedric.Breeding.Solvers
             var fullRecessivePlant = recessiveSolver.Solve(bitSolver.AlleleWithFullBits.Value);
 
             var PlantSolver = new PlantSolver(this.PoolOfPlants);
-            PlantSolver.Solve(targets, fullRecessivePlant);
+            return PlantSolver.Solve(targets, fullRecessivePlant);
            
         }
         
