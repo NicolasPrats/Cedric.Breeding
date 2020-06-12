@@ -29,8 +29,6 @@ namespace Cedric.Breeding.Solvers
 
         public void Solve(SetOfPlants targets)
         {
-            //TODO : à chaque fois qu'on a le choix entre plusieurs plantes,
-            // prendre la moins chère
             foreach (var recessif in Parameters.Recessives)
             {
                 int nbBits = 0;

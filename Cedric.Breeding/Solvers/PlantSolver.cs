@@ -38,11 +38,43 @@ namespace Cedric.Breeding.Solvers
             }
         }
 
+        private IList<int[]> PossibleOrders = (new int[] { 0, 1, 2, 3, 4, 5 }).Permutations().ToList();
         private void Solve(Plant target, Plant fullRecessivePlant)
         {
-            //On recherche dans l'ordre, mais on pourrait chercher les permutations
-            //pour diminuer les coûts
+            var evaluatedVariants = new HashSet<Plant>();
+            Allele[] genome = target.Genome.ToArray();
+            Plant? bestVariant = null;
+            Allele[] genomeVariant = new Allele[Parameters.NbGenes];
+            foreach (var order in PossibleOrders)
+            {
+                for (int i = 0; i < Parameters.NbGenes; i++)
+                {
+                    genomeVariant[i] = genome[order[i]];
+                }
+                var plantVariant = PlantFactory.Instance.GetPlant(genomeVariant, double.MaxValue);
+                if (evaluatedVariants.Contains(plantVariant))
+                    continue;
+                evaluatedVariants.Add(plantVariant);
+                if (SolveRespectingOrder(plantVariant, fullRecessivePlant))
+                {
+                    if (bestVariant == null || bestVariant.Cost > plantVariant.Cost)
+                    {
+                        bestVariant = plantVariant;
+                    }
+                }
+            }
+            if (bestVariant == null)
+            {
+                File.WriteAllText(target.Name + ".txt", "Not found");
+            }
+            else
+            {
+                File.WriteAllText(target.Name + ".txt", bestVariant.GenerateTree());
+            }
+        }
 
+        private bool SolveRespectingOrder(Plant target, Plant fullRecessivePlant)
+        {
             Plant? result = fullRecessivePlant;
             for (int i = 0; i < Parameters.NbGenes; i++)
             {
@@ -50,10 +82,10 @@ namespace Cedric.Breeding.Solvers
                 {
                     result = BitSolver.SetBit(result, i, target[i]);
                     if (result == null)
-                        return;
+                        return false;
                 }
             }
-            File.WriteAllText(target.Name + ".txt", result.GenerateTree());
+            return true;
         }
 
        

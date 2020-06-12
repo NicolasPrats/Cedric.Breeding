@@ -33,7 +33,7 @@ namespace Cedric.Breeding.Data
             return GetPlant(genome, 0);
         }
 
-        private Plant GetPlant(Allele[] genome, double initialCost)
+        public Plant GetPlant(Allele[] genome, double initialCost)
         {
             int hashCode = ComputeHashcode(genome);
             if (AlreadyCreatedPlants.TryGetValue(hashCode, out var plant))
